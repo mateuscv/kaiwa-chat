@@ -23,8 +23,10 @@ public class Client extends JFrame implements ActionListener, KeyListener {
     private JTextField txtMsg;
     private JButton btnSend;
     private JButton btnSair;
+    private JLabel ipLabel;
+    private JLabel portLabel;
+    private JLabel userLabel;
     private JLabel lblHistorico;
-    private JLabel lblMsg;
     private JPanel pnlContent;
     private Socket socket;
     private OutputStream ou ;
@@ -35,22 +37,24 @@ public class Client extends JFrame implements ActionListener, KeyListener {
     private JTextField txtNome;
 
     public Client() throws IOException{
-        JLabel lblMessage = new JLabel("Verificar!");
+        JLabel lblMessage = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
+        ipLabel = new JLabel("IP do Servidor");
         txtIP = new JTextField("127.0.0.1");
+        portLabel = new JLabel("Porta");
         txtPorta = new JTextField("12345");
-        txtNome = new JTextField("Cliente");
-        Object[] texts = {lblMessage, txtIP, txtPorta, txtNome };
+        userLabel = new JLabel("Seu nome");
+        txtNome = new JTextField("usuario");
+        Object[] texts = {lblMessage, ipLabel, txtIP, portLabel, txtPorta, userLabel, txtNome };
         JOptionPane.showMessageDialog(null, texts);
         pnlContent = new JPanel();
         texto              = new JTextArea(10,20);
         texto.setEditable(false);
         texto.setBackground(new Color(240,240,240));
         txtMsg                       = new JTextField(20);
-        lblHistorico     = new JLabel("Histórico");
-        lblMsg        = new JLabel("Mensagem");
+        lblHistorico     = new JLabel("kaiWa Group Chat");
         btnSend                     = new JButton("Enviar");
         btnSend.setToolTipText("Enviar Mensagem");
-        btnSair           = new JButton("Sair");
+        btnSair           = new JButton("Desconectar");
         btnSair.setToolTipText("Sair do Chat");
         btnSend.addActionListener(this);
         btnSair.addActionListener(this);
@@ -60,18 +64,17 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         texto.setLineWrap(true);
         pnlContent.add(lblHistorico);
         pnlContent.add(scroll);
-        pnlContent.add(lblMsg);
         pnlContent.add(txtMsg);
         pnlContent.add(btnSair);
         pnlContent.add(btnSend);
-        pnlContent.setBackground(Color.LIGHT_GRAY);
-        texto.setBorder(BorderFactory.createEtchedBorder(Color.BLUE,Color.BLUE));
-        txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.BLUE, Color.BLUE));
+        pnlContent.setBackground(new Color(245, 218, 196));
+        texto.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
+        txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
         setTitle(txtNome.getText());
         setContentPane(pnlContent);
         setLocationRelativeTo(null);
         setResizable(false);
-        setSize(250,300);
+        setSize(250,320);
         setVisible(true);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -92,7 +95,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
             texto.append("Desconectado \r\n");
         }else{
             bfw.write(msg+"\r\n");
-            texto.append( txtNome.getText() + " diz -> " +         txtMsg.getText()+"\r\n");
+            texto.append(txtNome.getText() + " disse: " +         txtMsg.getText()+"\r\n");
         }
         bfw.flush();
         txtMsg.setText("");
