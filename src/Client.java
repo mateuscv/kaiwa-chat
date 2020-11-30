@@ -44,7 +44,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         txtPorta = new JTextField("12345");
         userLabel = new JLabel("Seu nome");
         txtNome = new JTextField("usuario");
-        Object[] texts = {lblMessage, ipLabel, txtIP, portLabel, txtPorta, userLabel, txtNome };
+        Object[] texts = {lblMessage, userLabel, txtNome, ipLabel, txtIP, portLabel, txtPorta  };
         JOptionPane.showMessageDialog(null, texts);
         pnlContent = new JPanel();
         texto              = new JTextArea(10,20);
