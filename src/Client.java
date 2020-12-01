@@ -1,10 +1,11 @@
-//import com.sun.xml.internal.bind.v2.TODO;
+// imports client
 
-import java.awt.Color;
+import java.net.Socket;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -13,30 +14,36 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.Socket;
 import javax.swing.*;
+
+// client class
 
 public class Client extends JFrame implements ActionListener, KeyListener {
 
-    private static final long serialVersionUID = 1L;
-    private JTextArea texto;
-    private JTextField txtMsg;
-    private JButton btnSend;
-    private JButton btnSair;
     private JLabel ipLabel;
     private JLabel portLabel;
     private JLabel userLabel;
-    private JLabel lblHistorico;
+    private JLabel chatLabel;
+    private JTextField txtIP;
+    private JTextField txtPorta;
+    private JTextField txtNome;
+
+    private JTextArea texto;
+    private JTextField txtMsg;
+
     private JPanel pnlContent;
     private Socket socket;
     private OutputStream ou ;
     private Writer ouw;
     private BufferedWriter bfw;
-    private JTextField txtIP;
-    private JTextField txtPorta;
-    private JTextField txtNome;
 
+    private JButton btnSend;
+    private JButton btnSair;
+
+    // criação da GUI
     public Client() throws IOException{
+
+        // painel inicial de login
         JLabel lblMessage = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
         ipLabel = new JLabel("IP do Servidor");
         txtIP = new JTextField("127.0.0.1");
@@ -46,12 +53,13 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         txtNome = new JTextField("usuario");
         Object[] texts = {lblMessage, userLabel, txtNome, ipLabel, txtIP, portLabel, txtPorta  };
         JOptionPane.showMessageDialog(null, texts);
+
         pnlContent = new JPanel();
         texto              = new JTextArea(10,20);
         texto.setEditable(false);
         texto.setBackground(new Color(240,240,240));
         txtMsg                       = new JTextField(20);
-        lblHistorico     = new JLabel("kaiWa Group Chat");
+        chatLabel     = new JLabel("kaiWa Group Chat");
         btnSend                     = new JButton("Enviar");
         btnSend.setToolTipText("Enviar Mensagem");
         btnSair           = new JButton("Desconectar");
@@ -62,7 +70,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         txtMsg.addKeyListener(this);
         JScrollPane scroll = new JScrollPane(texto);
         texto.setLineWrap(true);
-        pnlContent.add(lblHistorico);
+        pnlContent.add(chatLabel);
         pnlContent.add(scroll);
         pnlContent.add(txtMsg);
         pnlContent.add(btnSair);
@@ -79,6 +87,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
+    // conexão com o servidor
     public void connect() throws IOException{
         socket = new Socket(txtIP.getText(),Integer.parseInt(txtPorta.getText()));
         ou = socket.getOutputStream();
@@ -88,6 +97,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         bfw.flush();
     }
 
+    // envio de mensagens
     public void sendMessages(String msg) throws IOException{
 
         if(msg.equals("Sair")){
@@ -101,6 +111,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         txtMsg.setText("");
     }
 
+    // escuta
     public void listen() throws IOException{
 
         InputStream in = socket.getInputStream();
@@ -119,6 +130,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
             }
     }
 
+    // codigo de saída
     public void exit() throws IOException{
 
         sendMessages("Sair");
@@ -127,6 +139,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         ou.close();
         socket.close();
     }
+
     public void actionPerformed(ActionEvent e) {
 
         try {
