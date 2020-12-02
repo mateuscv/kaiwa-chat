@@ -1,10 +1,7 @@
 // imports client
 
+import java.awt.event.*;
 import java.net.Socket;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14,7 +11,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.net.URL;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
 
 // client class
 
@@ -23,7 +27,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
     private JLabel ipLabel;
     private JLabel portLabel;
     private JLabel userLabel;
-    private JLabel chatLabel;
+    //private JLabel chatLabel;
     private JTextField txtIP;
     private JTextField txtPorta;
     private JTextField txtNome;
@@ -55,37 +59,54 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         JOptionPane.showMessageDialog(null, texts);
 
         pnlContent = new JPanel();
-        texto              = new JTextArea(10,20);
+        texto = new JTextArea(20,50);
         texto.setEditable(false);
         texto.setBackground(new Color(240,240,240));
-        txtMsg                       = new JTextField(20);
-        chatLabel     = new JLabel("kaiWa Group Chat");
-        btnSend                     = new JButton("Enviar");
+        txtMsg = new JTextField(44);
+        //chatLabel = new JLabel(" ");
+        //chatLabel.setFont(new Font("Verdana", Font.PLAIN, 16));
+        btnSend = new JButton("Enviar");
         btnSend.setToolTipText("Enviar Mensagem");
-        btnSair           = new JButton("Desconectar");
-        btnSair.setToolTipText("Sair do Chat");
+        //btnSair = new JButton("Desconectar");
+        //btnSair.setToolTipText("Sair do Chat");
         btnSend.addActionListener(this);
-        btnSair.addActionListener(this);
+        //btnSair.addActionListener(this);
         btnSend.addKeyListener(this);
         txtMsg.addKeyListener(this);
         JScrollPane scroll = new JScrollPane(texto);
         texto.setLineWrap(true);
-        pnlContent.add(chatLabel);
+        //pnlContent.add(chatLabel);
         pnlContent.add(scroll);
         pnlContent.add(txtMsg);
-        pnlContent.add(btnSair);
+        //pnlContent.add(btnSair);
         pnlContent.add(btnSend);
         pnlContent.setBackground(new Color(245, 218, 196));
         texto.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
         txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
-        setTitle(txtNome.getText());
+        URL url = new URL("https://cdn.discordapp.com/attachments/783089532437266432/783782711785160765/icon-backup.png");
+        Image icon = ImageIO.read(url);
+        setIconImage(icon);
+        setTitle("kaiWa Chat: " +  txtNome.getText());
         setContentPane(pnlContent);
         setLocationRelativeTo(null);
         setResizable(false);
-        setSize(250,320);
+        setSize(630,420);
         setVisible(true);
+
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                try {
+                    exit();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
     }
+
 
     // conexão com o servidor
     public void connect() throws IOException{
@@ -99,13 +120,25 @@ public class Client extends JFrame implements ActionListener, KeyListener {
 
     // envio de mensagens
     public void sendMessages(String msg) throws IOException{
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String hour = Integer.toString(timestamp.getHours());
+        String minutes = Integer.toString(timestamp.getMinutes());
+
+        if (hour.length() < 2){
+            hour = "0" + hour;
+        }
+
+        if (minutes.length() < 2){
+            minutes = "0" + minutes;
+        }
+
 
         if(msg.equals("Sair")){
             bfw.write("Desconectado \r\n");
             texto.append("Desconectado \r\n");
         }else{
             bfw.write(msg+"\r\n");
-            texto.append(txtNome.getText() + " disse: " +         txtMsg.getText()+"\r\n");
+            texto.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + txtMsg.getText()+"\r\n");
         }
         bfw.flush();
         txtMsg.setText("");
@@ -138,6 +171,7 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         ouw.close();
         ou.close();
         socket.close();
+        System.exit(1);
     }
 
     public void actionPerformed(ActionEvent e) {

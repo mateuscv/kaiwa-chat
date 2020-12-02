@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -15,7 +16,7 @@ import javax.swing.JTextField;
 
 
 public class Server extends Thread {
-    private static ArrayList<BufferedWriter>clients;
+    private static ArrayList<BufferedWriter> clients;
     private static ServerSocket server;
     private String name;
     private Socket talk;
@@ -37,10 +38,14 @@ public class Server extends Thread {
     {
         BufferedWriter bwS;
 
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        String hour = Integer.toString(timestamp.getHours());
+        String minutes = Integer.toString(timestamp.getMinutes());
+
         for(BufferedWriter bw : clients){
             bwS = (BufferedWriter)bw;
             if(!(bwSaida == bwS)){
-                bw.write(name + " -> " + msg+"\r\n");
+                bw.write("[" + hour  + ":" + minutes + "] " + name + " disse: " + msg+"\r\n");
                 bw.flush();
             }
         }
@@ -60,8 +65,12 @@ public class Server extends Thread {
             while(!"Sair".equalsIgnoreCase(msg) && msg != null)
             {
                 msg = bfr.readLine();
+                if (msg == null){
+                    System.out.println("caiu null");
+                    continue;
+                }
                 sendToAll(bfw, msg);
-                System.out.println(msg);
+                System.out.println(msg + "EU SOU  A MSG");
             }
 
         }catch (Exception e) {
