@@ -34,11 +34,11 @@ public class Client extends JFrame implements KeyListener, ActionListener {
 
     private JTextArea chatArea;
 
-    private JPanel pnlContent;
+    private JPanel chatJPanel;
 
-    private OutputStream ou ;
-    private Writer ouw;
-    private BufferedWriter bfw;
+    private OutputStream outputStream;
+    private Writer writer;
+    private BufferedWriter bufferedWriter;
 
     private JButton sendButton;
 
@@ -62,42 +62,55 @@ public class Client extends JFrame implements KeyListener, ActionListener {
     // criação das GUIs
     public Client() throws IOException{
 
+        // login GUI
         userField = handleLogin();
 
-        // checa se o usuário preencheu seu nome
+        // checa se o usuário preencheu seu nome no login
         while (userField.getText() == null || userField.getText().trim().isEmpty()) {
+            System.out.println("username não encontrado. Você o digitou?");
             userField = handleLogin();
         }
 
-        // janela de conversa
-        pnlContent = new JPanel();
+        // janela de conversa:
+
+        // meta
+        chatJPanel = new JPanel();
+        URL url = new URL("https://cdn.discordapp.com/attachments/783089532437266432/783782711785160765/icon-backup.png");
+        Image icon = ImageIO.read(url);
+        setIconImage(icon);
+        setTitle("kaiWa Chat: " +  userField.getText());
+
+        // elementos
         chatArea = new JTextArea(20,50);
         chatArea.setEditable(false);
         chatArea.setBackground(new Color(240,240,240));
         msgField = new JTextField(44);
         sendButton = new JButton("Enviar");
-        sendButton.setToolTipText("Enviar Mensagem");
+        sendButton.setBackground(new Color(194, 172, 193));
+        sendButton.setForeground(new Color(212, 209, 203));
+        JScrollPane scrollBar = new JScrollPane(chatArea);
+        chatArea.setLineWrap(true);
+        chatJPanel.add(scrollBar);
+        chatJPanel.add(msgField);
+        chatJPanel.add(sendButton);
+
+        // estética
+        chatJPanel.setBackground(new Color(245, 218, 196));
+        chatArea.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
+        msgField.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
+
+        // listeners de ação
         sendButton.addActionListener(this);
         sendButton.addKeyListener(this);
         msgField.addKeyListener(this);
-        JScrollPane scrollBar = new JScrollPane(chatArea);
-        chatArea.setLineWrap(true);
-        pnlContent.add(scrollBar);
-        pnlContent.add(msgField);
-        pnlContent.add(sendButton);
-        pnlContent.setBackground(new Color(245, 218, 196));
-        chatArea.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
-        msgField.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
-        URL url = new URL("https://cdn.discordapp.com/attachments/783089532437266432/783782711785160765/icon-backup.png");
-        Image icon = ImageIO.read(url);
-        setIconImage(icon);
-        setTitle("kaiWa Chat: " +  userField.getText());
-        setContentPane(pnlContent);
+
+        setContentPane(chatJPanel);
         setLocationRelativeTo(null);
         setResizable(false);
         setSize(630,420);
         setVisible(true);
 
+        // listener para quando fechar o chat. Fecha conexões em caso de existirem, senão só encerra o processo.
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 try {
@@ -116,11 +129,11 @@ public class Client extends JFrame implements KeyListener, ActionListener {
     // conexão com o servidor
     public void connect() throws IOException{
         socket = new Socket(ipField.getText(),Integer.parseInt(portField.getText()));
-        ou = socket.getOutputStream();
-        ouw = new OutputStreamWriter(ou);
-        bfw = new BufferedWriter(ouw);
-        bfw.write(userField.getText()+"\r\n");
-        bfw.flush();
+        outputStream = socket.getOutputStream();
+        writer = new OutputStreamWriter(outputStream);
+        bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write(userField.getText()+"\r\n");
+        bufferedWriter.flush();
     }
 
     // envio de mensagens
@@ -138,13 +151,13 @@ public class Client extends JFrame implements KeyListener, ActionListener {
         }
 
         if(msg.equals("Sair")){
-            bfw.write("Desconectado \r\n");
+            bufferedWriter.write("Desconectado \r\n");
             chatArea.append("Desconectado \r\n");
         }else{
-            bfw.write(msg+"\r\n");
+            bufferedWriter.write(msg+"\r\n");
             chatArea.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + msgField.getText()+"\r\n");
         }
-        bfw.flush();
+        bufferedWriter.flush();
         msgField.setText("");
     }
 
@@ -171,9 +184,9 @@ public class Client extends JFrame implements KeyListener, ActionListener {
     public void exit() throws IOException{
 
         sendMessages("Sair");
-        bfw.close();
-        ouw.close();
-        ou.close();
+        bufferedWriter.close();
+        writer.close();
+        outputStream.close();
         socket.close();
         System.exit(1);
     }
@@ -183,11 +196,12 @@ public class Client extends JFrame implements KeyListener, ActionListener {
         try {
             if(e.getActionCommand().equals(sendButton.getActionCommand()))
                 sendMessages(msgField.getText());
-        } catch (IOException e1) {
+        } catch (IOException ioe) {
             // TODO Auto-generated catch block
-            e1.printStackTrace();
+            ioe.printStackTrace();
         }
     }
+
     public void keyPressed(KeyEvent e) {
 
         if(e.getKeyCode() == KeyEvent.VK_ENTER){
@@ -202,12 +216,10 @@ public class Client extends JFrame implements KeyListener, ActionListener {
 
     @Override
     public void keyReleased(KeyEvent arg0) {
-        //TODO Auto-generated method stub
     }
 
     @Override
     public void keyTyped(KeyEvent arg0) {
-        // TODO Auto-generated method stub
     }
 
     public static void main(String []args) throws IOException{
