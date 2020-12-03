@@ -81,28 +81,25 @@ public class Server extends Thread {
 
     public static void main(String[] args){
         try{
-            //Cria os objetos necessário para instânciar o servidor
-            JLabel lblMessage = new JLabel("Porta do Servidor:");
-            JTextField txtPorta = new JTextField("12345");
-            Object[] texts = {lblMessage, txtPorta };
-            JOptionPane.showMessageDialog(null, texts);
-            server = new ServerSocket(Integer.parseInt(txtPorta.getText()));
+            // criação da janela de inicialização do servidor
+            JLabel portLabel = new JLabel("Porta:");
+            JTextField portField = new JTextField("31415");
+            Object[] struct = {portLabel, portField };
+            JOptionPane.showMessageDialog(null, struct);
+            server = new ServerSocket(Integer.parseInt(portField.getText()));
             clients = new ArrayList<BufferedWriter>();
-            JOptionPane.showMessageDialog(null,"Servidor ativo na porta: "+
-                    txtPorta.getText());
+            System.out.println("Servidor online na porta " + portField.getText());
 
+            // loop de aceitar conexões c clientes
             while(true){
-                System.out.println("Aguardando conexão...");
-                Socket con = server.accept();
-                System.out.println("Cliente conectado...");
-                Thread t = new Server(con);
-                t.start();
+                Socket talk = server.accept();
+                System.out.println("Conexão com o cliente estabelecida.");
+                Thread clientThread = new Server(talk);
+                clientThread.start();
             }
 
         }catch (Exception e) {
-
             e.printStackTrace();
         }
-    }// Fim do método main
-
+    }
 }
