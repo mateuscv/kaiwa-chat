@@ -1,52 +1,52 @@
+// importações
+import java.net.Socket;
+import java.net.ServerSocket;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import java.io.IOException;
 
 
 public class Server extends Thread {
     private static ArrayList<BufferedWriter> clients;
     private static ServerSocket server;
     private String name;
-    private Socket talk;
-    private InputStream in;
-    private InputStreamReader inr;
-    private BufferedReader bfr;
+    private final Socket talk;
+    private BufferedReader bufferedReader;
 
-    public Server(Socket con){
-        this.talk = con;
+    public Server(Socket talk){
+        this.talk = talk;
         try {
-            in  = con.getInputStream();
-            inr = new InputStreamReader(in);
-            bfr = new BufferedReader(inr);
+            InputStream inputStream = talk.getInputStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+            bufferedReader = new BufferedReader(inputStreamReader);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void sendToAll(BufferedWriter bwSaida, String msg) throws  IOException
+
+    public void sendToAll(BufferedWriter bwOutput, String msg) throws  IOException
     {
-        BufferedWriter bwS;
+        BufferedWriter bufferedWriterS;
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String hour = Integer.toString(timestamp.getHours());
         String minutes = Integer.toString(timestamp.getMinutes());
 
-        for(BufferedWriter bw : clients){
-            bwS = (BufferedWriter)bw;
-            if(!(bwSaida == bwS)){
-                bw.write("[" + hour  + ":" + minutes + "] " + name + " disse: " + msg+"\r\n");
-                bw.flush();
+        for(BufferedWriter bufferedWriter : clients){
+            bufferedWriterS = (BufferedWriter)bufferedWriter;
+            if(!(bwOutput == bufferedWriterS)){
+                bufferedWriter.write("[" + hour  + ":" + minutes + "] " + name + " disse: " + msg+"\r\n");
+                bufferedWriter.flush();
             }
         }
     }
@@ -56,20 +56,20 @@ public class Server extends Thread {
         try{
 
             String msg;
-            OutputStream ou =  this.talk.getOutputStream();
-            Writer ouw = new OutputStreamWriter(ou);
-            BufferedWriter bfw = new BufferedWriter(ouw);
-            clients.add(bfw);
-            name = msg = bfr.readLine();
+            OutputStream outputStream =  this.talk.getOutputStream();
+            Writer outputStreamWriter = new OutputStreamWriter(outputStream);
+            BufferedWriter bufferedWriter = new BufferedWriter(outputStreamWriter);
+            clients.add(bufferedWriter);
+            name = msg = bufferedReader.readLine();
 
             while(!"Sair".equalsIgnoreCase(msg) && msg != null)
             {
-                msg = bfr.readLine();
+                msg = bufferedReader.readLine();
                 if (msg == null){
                     System.out.println("caiu null");
                     continue;
                 }
-                sendToAll(bfw, msg);
+                sendToAll(bufferedWriter, msg);
                 System.out.println(msg + "EU SOU  A MSG");
             }
 

@@ -19,39 +19,33 @@ import java.sql.Timestamp;
 
 
 // classe
-public class Client extends JFrame implements KeyListener, ActionListener {
+public class Client extends JFrame implements KeyListener, ActionListener { //KL e AL para usar overrides destes
 
     private Socket socket;
-
-    private JLabel ipLabel;
-    private JLabel portLabel;
-    private JLabel userLabel;
 
     private JTextField ipField;
     private JTextField portField;
     private JTextField userField;
-    private JTextField msgField;
+    private final JTextField msgField;
 
-    private JTextArea chatArea;
-
-    private JPanel chatJPanel;
+    private final JTextArea chatArea;
 
     private OutputStream outputStream;
     private Writer writer;
     private BufferedWriter bufferedWriter;
 
-    private JButton sendButton;
+    private final JButton sendButton;
 
 
     public JTextField handleLogin(){
         // painel inicial de login
 
         JLabel welcomeMsg = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
-        ipLabel = new JLabel("IP do Servidor");
+        JLabel ipLabel = new JLabel("IP do Servidor");
         ipField = new JTextField("127.0.0.1");
-        portLabel = new JLabel("Porta");
+        JLabel portLabel = new JLabel("Porta");
         portField = new JTextField("31415");
-        userLabel = new JLabel("Seu nome");
+        JLabel userLabel = new JLabel("Seu nome");
         userField = new JTextField();
         Object[] texts = {welcomeMsg, userLabel, userField, ipLabel, ipField, portLabel, portField};
         JOptionPane.showMessageDialog(null, texts);
@@ -60,7 +54,7 @@ public class Client extends JFrame implements KeyListener, ActionListener {
     }
 
     // criação das GUIs
-    public Client() throws IOException{
+    public Client() throws IOException {
 
         // login GUI
         userField = handleLogin();
@@ -74,7 +68,7 @@ public class Client extends JFrame implements KeyListener, ActionListener {
         // janela de conversa:
 
         // meta
-        chatJPanel = new JPanel();
+        JPanel chatJPanel = new JPanel();
         URL url = new URL("https://cdn.discordapp.com/attachments/783089532437266432/783782711785160765/icon-backup.png");
         Image icon = ImageIO.read(url);
         setIconImage(icon);
@@ -96,7 +90,7 @@ public class Client extends JFrame implements KeyListener, ActionListener {
 
         // estética
         chatJPanel.setBackground(new Color(245, 218, 196));
-        chatArea.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
+        chatArea.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
         msgField.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
 
         // listeners de ação
@@ -136,6 +130,25 @@ public class Client extends JFrame implements KeyListener, ActionListener {
         bufferedWriter.flush();
     }
 
+    // escuta
+    public void listen() throws IOException{
+
+        InputStream in = socket.getInputStream();
+        InputStreamReader inr = new InputStreamReader(in);
+        BufferedReader bfr = new BufferedReader(inr);
+        String msg = "";
+
+        while(!"Sair".equalsIgnoreCase(msg))
+
+            if(bfr.ready()){
+                msg = bfr.readLine();
+                if(msg.equals("Sair"))
+                    chatArea.append("Servidor caiu! \r\n");
+                else
+                    chatArea.append(msg+"\r\n");
+            }
+    }
+
     // envio de mensagens
     public void sendMessages(String msg) throws IOException{
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -159,36 +172,6 @@ public class Client extends JFrame implements KeyListener, ActionListener {
         }
         bufferedWriter.flush();
         msgField.setText("");
-    }
-
-    // escuta
-    public void listen() throws IOException{
-
-        InputStream in = socket.getInputStream();
-        InputStreamReader inr = new InputStreamReader(in);
-        BufferedReader bfr = new BufferedReader(inr);
-        String msg = "";
-
-        while(!"Sair".equalsIgnoreCase(msg))
-
-            if(bfr.ready()){
-                msg = bfr.readLine();
-                if(msg.equals("Sair"))
-                    chatArea.append("Servidor caiu! \r\n");
-                else
-                    chatArea.append(msg+"\r\n");
-            }
-    }
-
-    // codigo de saída
-    public void exit() throws IOException{
-
-        sendMessages("Sair");
-        bufferedWriter.close();
-        writer.close();
-        outputStream.close();
-        socket.close();
-        System.exit(1);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -220,6 +203,17 @@ public class Client extends JFrame implements KeyListener, ActionListener {
 
     @Override
     public void keyTyped(KeyEvent arg0) {
+    }
+
+    // codigo de saída
+    public void exit() throws IOException{
+
+        sendMessages("Sair");
+        bufferedWriter.close();
+        writer.close();
+        outputStream.close();
+        socket.close();
+        System.exit(1);
     }
 
     public static void main(String []args) throws IOException{
