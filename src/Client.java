@@ -76,13 +76,12 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         // elementos
         chatArea = new JTextArea(20,50);
-        chatArea.paint(new Color());
+        chatArea.setBackground(new Color(247, 239, 237));
         chatArea.setEditable(false);
-        chatArea.setBackground(new Color(240,240,240));
         msgField = new JTextField(44);
         sendButton = new JButton("Enviar");
-        sendButton.setBackground(new Color(194, 172, 193));
-        sendButton.setForeground(new Color(212, 209, 203));
+        sendButton.setBackground(new Color(217, 191, 184));
+        sendButton.setForeground(new Color(255, 255, 255));
         JScrollPane scrollBar = new JScrollPane(chatArea);
         chatArea.setLineWrap(true);
         chatJPanel.add(scrollBar);
@@ -109,7 +108,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
                 try {
                     exit();
                 } catch (Exception exception) {
-                    System.out.printf("A funcao exit falhou. O servidor está online?\n");
+                    System.out.print("A funcao exit falhou. O servidor está online?\n");
                     exception.printStackTrace();
                     setVisible(false);
                     dispose();
@@ -162,8 +161,8 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         }
 
         if(msg.equals("Sair")){
-            bufferedWriter.write("Desconectado \r\n");
-            chatArea.append("Desconectado \r\n");
+            bufferedWriter.write("saiu do chat \r\n");
+            chatArea.append("saiu do chat \r\n");
         }else{
             bufferedWriter.write(msg+"\r\n");
             chatArea.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + msgField.getText()+"\r\n");
@@ -211,7 +210,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         writer.close();
         outputStream.close();
         socket.close();
-        System.out.println("HERE");
     }
 
     public static void main(String []args) throws IOException{
