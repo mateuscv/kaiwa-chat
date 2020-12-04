@@ -36,7 +36,7 @@ public class Server extends Thread {
     }
 
     // método que envia as mensagens aos clientes conectados
-    public void sendMessage(String msg, BufferedWriter bwSender) throws  IOException {
+    public void sendMessage(String msg, BufferedWriter bwSender, boolean firstMsg) throws  IOException {
 
         BufferedWriter bufferedWriterReceiver;
 
@@ -54,12 +54,16 @@ public class Server extends Thread {
         for(BufferedWriter bufferedWriter : clientsList){
             bufferedWriterReceiver = bufferedWriter;
             if(bwSender != bufferedWriterReceiver){ //manda msg pra todos que não são ele mesmo.
-                if (!msg.equals("saiu do chat ")){
+                if (firstMsg){
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] " + msg+"\r\n");
+                    bufferedWriter.flush(); //limpa o stream
+                }
+                if (!msg.equals("saiu do chat ") && !firstMsg){
                     bufferedWriter.write("[" + hour  + ":" + minutes + "] " + userName + " disse: " + msg+"\r\n");
-                    bufferedWriter.flush(); //limpa o stream
-                } else {
+                    bufferedWriter.flush();
+                } else if (!firstMsg){
                     bufferedWriter.write("[" + hour  + ":" + minutes + "] >>>> " + userName + " " + msg+"<<<<\r\n");
-                    bufferedWriter.flush(); //limpa o stream
+                    bufferedWriter.flush();
                 }
             }
         }
@@ -75,6 +79,7 @@ public class Server extends Thread {
 
             msg = clientBufferedReader.readLine();
             userName = msg;
+            sendMessage(">>>> " + userName + " entrou no chat <<<<", bufferedWriter, true);
 
             clientsList.add(bufferedWriter);
 
@@ -84,7 +89,7 @@ public class Server extends Thread {
                 if (msg == null){
                     continue;
                 }
-                sendMessage(msg, bufferedWriter);
+                sendMessage(msg, bufferedWriter, false);
             }
 
             clientsList.remove(bufferedWriter);
