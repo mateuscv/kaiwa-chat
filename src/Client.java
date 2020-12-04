@@ -15,7 +15,7 @@ import java.io.OutputStreamWriter;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 // classe
@@ -76,6 +76,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         // elementos
         chatArea = new JTextArea(20,50);
+        chatArea.paint(new Color());
         chatArea.setEditable(false);
         chatArea.setBackground(new Color(240,240,240));
         msgField = new JTextField(44);
@@ -90,8 +91,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         // estética
         chatJPanel.setBackground(new Color(245, 218, 196));
-        chatArea.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
-        msgField.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
 
         // listeners de ação
         sendButton.addActionListener(this);
@@ -138,7 +137,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         BufferedReader bfr = new BufferedReader(inr);
         String msg = "";
 
-        while(!"Sair".equalsIgnoreCase(msg))
+        while(!"Sair".equals(msg))
 
             if(bfr.ready()){
                 msg = bfr.readLine();
@@ -151,9 +150,8 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
     // envio de mensagens
     public void sendMessages(String msg) throws IOException{
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String hour = Integer.toString(timestamp.getHours());
-        String minutes = Integer.toString(timestamp.getMinutes());
+        String hour = Integer.toString(LocalDateTime.now().getHour());
+        String minutes = Integer.toString(LocalDateTime.now().getMinute());
 
         if (hour.length() < 2){
             hour = "0" + hour;
@@ -213,7 +211,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         writer.close();
         outputStream.close();
         socket.close();
-        System.exit(1);
+        System.out.println("HERE");
     }
 
     public static void main(String []args) throws IOException{
