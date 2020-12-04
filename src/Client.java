@@ -136,11 +136,11 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         BufferedReader bfr = new BufferedReader(inr);
         String msg = "";
 
-        while(!"Sair".equals(msg))
+        while(!"quit".equals(msg))
 
             if(bfr.ready()){
                 msg = bfr.readLine();
-                if(msg.equals("Sair"))
+                if(msg.equals("quit"))
                     chatArea.append("Servidor caiu! \r\n");
                 else
                     chatArea.append(msg+"\r\n");
@@ -160,9 +160,8 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
             minutes = "0" + minutes;
         }
 
-        if(msg.equals("Sair")){
+        if(msg.equals("quit")){
             bufferedWriter.write("saiu do chat \r\n");
-            chatArea.append("saiu do chat \r\n");
         }else{
             bufferedWriter.write(msg+"\r\n");
             chatArea.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + msgField.getText()+"\r\n");
@@ -205,7 +204,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
     // codigo de saída
     public void exit() throws IOException{
 
-        sendMessages("Sair");
+        sendMessages("quit");
         bufferedWriter.close();
         writer.close();
         outputStream.close();

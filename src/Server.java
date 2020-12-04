@@ -1,9 +1,9 @@
 // importações
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.SocketTimeoutException;
@@ -14,11 +14,11 @@ import java.io.IOException;
 
 public class Server extends Thread {
 
+    private final Socket talk;
+    private BufferedReader clientBufferedReader;
     private static ArrayList <BufferedWriter> clientsList;
 
     private String userName;
-    private BufferedReader clientBufferedReader;
-    private final Socket talk;
 
     // constructor
     public Server(Socket talk) throws IOException {
@@ -54,8 +54,13 @@ public class Server extends Thread {
         for(BufferedWriter bufferedWriter : clientsList){
             bufferedWriterReceiver = bufferedWriter;
             if(bwSender != bufferedWriterReceiver){ //manda msg pra todos que não são ele mesmo.
-                bufferedWriter.write("[" + hour  + ":" + minutes + "] " + userName + " disse: " + msg+"\r\n");
-                bufferedWriter.flush(); //limpa o stream
+                if (!msg.equals("saiu do chat ")){
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] " + userName + " disse: " + msg+"\r\n");
+                    bufferedWriter.flush(); //limpa o stream
+                } else {
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] >>>> " + userName + " " + msg+"<<<<\r\n");
+                    bufferedWriter.flush(); //limpa o stream
+                }
             }
         }
     }
@@ -73,7 +78,7 @@ public class Server extends Thread {
 
             clientsList.add(bufferedWriter);
 
-            while(!"Sair".equals(msg) && msg != null)
+            while(!"quit".equals(msg) && msg != null)
             {
                 msg = clientBufferedReader.readLine();
                 if (msg == null){
@@ -87,6 +92,22 @@ public class Server extends Thread {
         }catch (Exception e) {
             e.printStackTrace();
 
+        }
+    }
+
+    public static void acceptConnections(ServerSocket server) throws IOException {
+        // loop de aceitar conexões c clientes - servidor fecha após 5 min sem conexoes
+        while(true){
+            try {
+                Socket talk = server.accept();
+                System.out.println("Conexão com o cliente estabelecida.");
+                Thread clientThread = new Server(talk); //criação do servidor
+                clientThread.start();
+            }catch (SocketTimeoutException ste){
+                ste.printStackTrace();
+                System.out.println("Servidor encerrando - tempo limite de ociosidade atingido.");
+                break;
+            }
         }
     }
 
@@ -104,19 +125,8 @@ public class Server extends Thread {
 
             clientsList = new ArrayList<>();
 
-            // loop de aceitar conexões c clientes - servidor fecha após 5 min sem conexoes
-            while(true){
-                try {
-                    Socket talk = server.accept();
-                    System.out.println("Conexão com o cliente estabelecida.");
-                    Thread clientThread = new Server(talk); //criação do servidor
-                    clientThread.start();
-                }catch (SocketTimeoutException ste){
-                    ste.printStackTrace();
-                    System.out.println("Servidor encerrando - tempo limite de ociosidade atingido.");
-                    break;
-                }
-            }
+            acceptConnections(server);
+
         }catch (Exception e) {
             e.printStackTrace();
         }
