@@ -1,8 +1,10 @@
-// imports client
-
+// importações
 import java.awt.event.*;
+import java.net.ConnectException;
+import java.net.URL;
 import java.net.Socket;
 import java.awt.Color;
+import java.io.Writer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -10,138 +12,120 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.net.URL;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Month;
 
-// client class
 
-public class Client extends JFrame implements ActionListener, KeyListener {
+// classe
+public class Client extends JFrame implements KeyListener, ActionListener { //KL e AL para usar overrides destes
 
-    private JLabel ipLabel;
-    private JLabel portLabel;
-    private JLabel userLabel;
-    //private JLabel chatLabel;
-    private JTextField txtIP;
-    private JTextField txtPorta;
-    private JTextField txtNome;
-
-    private JTextArea texto;
-    private JTextField txtMsg;
-
-    private JPanel pnlContent;
     private Socket socket;
-    private OutputStream ou ;
-    private Writer ouw;
-    private BufferedWriter bfw;
 
-    private JButton btnSend;
-    private JButton btnSair;
+    private JTextField ipField;
+    private JTextField portField;
+    private JTextField userField;
+    private final JTextField msgField;
 
-    // criação da GUI
-    public Client() throws IOException{
+    private final JTextArea chatArea;
 
+    private OutputStream outputStream;
+    private Writer writer;
+    private BufferedWriter bufferedWriter;
+
+    private final JButton sendButton;
+
+
+    public JTextField handleLogin(){
         // painel inicial de login
-        JLabel lblMessage = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
-        ipLabel = new JLabel("IP do Servidor");
-        txtIP = new JTextField("127.0.0.1");
-        portLabel = new JLabel("Porta");
-        txtPorta = new JTextField("12345");
-        userLabel = new JLabel("Seu nome");
-        txtNome = new JTextField("usuario");
-        Object[] texts = {lblMessage, userLabel, txtNome, ipLabel, txtIP, portLabel, txtPorta  };
+
+        JLabel welcomeMsg = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
+        JLabel ipLabel = new JLabel("IP do Servidor");
+        ipField = new JTextField("localhost");
+        JLabel portLabel = new JLabel("Porta");
+        portField = new JTextField("31415");
+        JLabel userLabel = new JLabel("Seu nome");
+        userField = new JTextField();
+        Object[] texts = {welcomeMsg, userLabel, userField, ipLabel, ipField, portLabel, portField};
         JOptionPane.showMessageDialog(null, texts);
 
-        pnlContent = new JPanel();
-        texto = new JTextArea(20,50);
-        texto.setEditable(false);
-        texto.setBackground(new Color(240,240,240));
-        txtMsg = new JTextField(44);
-        //chatLabel = new JLabel(" ");
-        //chatLabel.setFont(new Font("Verdana", Font.PLAIN, 16));
-        btnSend = new JButton("Enviar");
-        btnSend.setToolTipText("Enviar Mensagem");
-        //btnSair = new JButton("Desconectar");
-        //btnSair.setToolTipText("Sair do Chat");
-        btnSend.addActionListener(this);
-        //btnSair.addActionListener(this);
-        btnSend.addKeyListener(this);
-        txtMsg.addKeyListener(this);
-        JScrollPane scroll = new JScrollPane(texto);
-        texto.setLineWrap(true);
-        //pnlContent.add(chatLabel);
-        pnlContent.add(scroll);
-        pnlContent.add(txtMsg);
-        //pnlContent.add(btnSair);
-        pnlContent.add(btnSend);
-        pnlContent.setBackground(new Color(245, 218, 196));
-        texto.setBorder(BorderFactory.createEtchedBorder(Color.PINK,Color.PINK));
-        txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.PINK, Color.PINK));
+        return userField;
+    }
+
+    // criação das GUIs
+    public Client() throws IOException {
+
+        // login GUI
+        userField = handleLogin();
+
+        // checa se o usuário preencheu seu nome no login
+        while (userField.getText() == null || userField.getText().trim().isEmpty()) {
+            System.out.println("username não encontrado. Você o digitou?");
+            userField = handleLogin();
+        }
+
+        // janela de conversa:
+
+        // meta
+        JPanel chatJPanel = new JPanel();
         URL url = new URL("https://cdn.discordapp.com/attachments/783089532437266432/783782711785160765/icon-backup.png");
         Image icon = ImageIO.read(url);
         setIconImage(icon);
-        setTitle("kaiWa Chat: " +  txtNome.getText());
-        setContentPane(pnlContent);
+        setTitle("kaiWa Chat: " +  userField.getText());
+
+        // elementos
+        chatArea = new JTextArea(20,50);
+        chatArea.setBackground(new Color(247, 239, 237));
+        chatArea.setEditable(false);
+        msgField = new JTextField(43);
+        msgField.setBackground(new Color(247, 239, 237));
+        sendButton = new JButton("Enviar");
+        sendButton.setBackground(new Color(149, 113, 240));
+        sendButton.setForeground(new Color(255, 255, 255));
+        JScrollPane scrollBar = new JScrollPane(chatArea);
+        chatArea.setLineWrap(true);
+        chatJPanel.add(scrollBar);
+        chatJPanel.add(msgField);
+        chatJPanel.add(sendButton);
+
+        // estética
+        chatJPanel.setBackground(new Color(245, 218, 196));
+
+        // listeners de ação
+        sendButton.addActionListener(this);
+        sendButton.addKeyListener(this);
+        msgField.addKeyListener(this);
+
+        setContentPane(chatJPanel);
         setLocationRelativeTo(null);
         setResizable(false);
         setSize(630,420);
         setVisible(true);
 
+        // listener para quando fechar o chat. Fecha conexões em caso de existirem, senão só encerra o processo.
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 try {
                     exit();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (Exception exception) {
+                    System.out.print("A funcao exit falhou. O servidor está online?\n");
+                    setVisible(false);
+                    dispose();
                 }
             }
         });
-
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-
     }
-
 
     // conexão com o servidor
     public void connect() throws IOException{
-        socket = new Socket(txtIP.getText(),Integer.parseInt(txtPorta.getText()));
-        ou = socket.getOutputStream();
-        ouw = new OutputStreamWriter(ou);
-        bfw = new BufferedWriter(ouw);
-        bfw.write(txtNome.getText()+"\r\n");
-        bfw.flush();
-    }
-
-    // envio de mensagens
-    public void sendMessages(String msg) throws IOException{
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String hour = Integer.toString(timestamp.getHours());
-        String minutes = Integer.toString(timestamp.getMinutes());
-
-        if (hour.length() < 2){
-            hour = "0" + hour;
-        }
-
-        if (minutes.length() < 2){
-            minutes = "0" + minutes;
-        }
-
-
-        if(msg.equals("Sair")){
-            bfw.write("Desconectado \r\n");
-            texto.append("Desconectado \r\n");
-        }else{
-            bfw.write(msg+"\r\n");
-            texto.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + txtMsg.getText()+"\r\n");
-        }
-        bfw.flush();
-        txtMsg.setText("");
+        socket = new Socket(ipField.getText(),Integer.parseInt(portField.getText()));
+        outputStream = socket.getOutputStream();
+        writer = new OutputStreamWriter(outputStream);
+        bufferedWriter = new BufferedWriter(writer);
+        bufferedWriter.write(userField.getText()+"\r\n");
+        bufferedWriter.flush();
     }
 
     // escuta
@@ -152,48 +136,56 @@ public class Client extends JFrame implements ActionListener, KeyListener {
         BufferedReader bfr = new BufferedReader(inr);
         String msg = "";
 
-        while(!"Sair".equalsIgnoreCase(msg))
+        while(!"quit".equals(msg))
 
             if(bfr.ready()){
                 msg = bfr.readLine();
-                if(msg.equals("Sair"))
-                    texto.append("Servidor caiu! \r\n");
+                if(msg.equals("quit"))
+                    chatArea.append("Servidor caiu! \r\n");
                 else
-                    texto.append(msg+"\r\n");
+                    chatArea.append(msg+"\r\n");
             }
     }
 
-    // codigo de saída
-    public void exit() throws IOException{
+    // envio de mensagens
+    public void sendMessages(String msg) throws IOException{
+        String hour = Integer.toString(LocalDateTime.now().getHour());
+        String minutes = Integer.toString(LocalDateTime.now().getMinute());
 
-        sendMessages("Sair");
-        bfw.close();
-        ouw.close();
-        ou.close();
-        socket.close();
-        System.exit(1);
+        if (hour.length() < 2){
+            hour = "0" + hour;
+        }
+
+        if (minutes.length() < 2){
+            minutes = "0" + minutes;
+        }
+
+        if(msg.equals("quit")){
+            bufferedWriter.write("saiu do chat \r\n");
+        }else{
+            bufferedWriter.write(msg+"\r\n");
+            chatArea.append("[" + hour  + ":" + minutes + "]" + " Você" + " disse: " + msgField.getText()+"\r\n");
+        }
+        bufferedWriter.flush();
+        msgField.setText("");
     }
 
     public void actionPerformed(ActionEvent e) {
 
         try {
-            if(e.getActionCommand().equals(btnSend.getActionCommand()))
-                sendMessages(txtMsg.getText());
-            else
-            if(e.getActionCommand().equals(btnSair.getActionCommand()))
-                exit();
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            if(e.getActionCommand().equals(sendButton.getActionCommand()))
+                sendMessages(msgField.getText());
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
         }
     }
+
     public void keyPressed(KeyEvent e) {
 
         if(e.getKeyCode() == KeyEvent.VK_ENTER){
             try {
-                sendMessages(txtMsg.getText());
+                sendMessages(msgField.getText());
             } catch (IOException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
@@ -201,19 +193,31 @@ public class Client extends JFrame implements ActionListener, KeyListener {
 
     @Override
     public void keyReleased(KeyEvent arg0) {
-        //TODO Auto-generated method stub
     }
 
     @Override
     public void keyTyped(KeyEvent arg0) {
-        // TODO Auto-generated method stub
+    }
+
+    // codigo de saída
+    public void exit() throws IOException{
+
+        sendMessages("quit");
+        bufferedWriter.close();
+        writer.close();
+        outputStream.close();
+        socket.close();
     }
 
     public static void main(String []args) throws IOException{
 
-        Client app = new Client();
-        app.connect();
-        app.listen();
+        Client clientApp = new Client();
+        try{
+            clientApp.connect();
+        } catch (ConnectException ce) {
+            System.out.println("Conexão falhou. O servidor está online?");
+        }
+        clientApp.listen();
     }
 
 }

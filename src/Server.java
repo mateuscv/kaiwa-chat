@@ -1,52 +1,70 @@
+// importações
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.sql.Timestamp;
+import java.net.SocketTimeoutException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
+import java.io.IOException;
 
 
 public class Server extends Thread {
-    private static ArrayList<BufferedWriter> clients;
-    private static ServerSocket server;
-    private String name;
-    private Socket talk;
-    private InputStream in;
-    private InputStreamReader inr;
-    private BufferedReader bfr;
 
-    public Server(Socket con){
-        this.talk = con;
+    private final Socket talk;
+    private BufferedReader clientBufferedReader;
+    private static ArrayList <BufferedWriter> clientsList;
+
+    private String userName;
+
+    // constructor
+    public Server(Socket talk) throws IOException {
+
+        this.talk = talk;
+
         try {
-            in  = con.getInputStream();
-            inr = new InputStreamReader(in);
-            bfr = new BufferedReader(inr);
+            InputStreamReader inputStreamReader = new InputStreamReader(talk.getInputStream()); // leitor e conversor chars <-> bytes
+            clientBufferedReader = new BufferedReader(inputStreamReader); // estrutura de buffer para processamento do input
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
-    public void sendToAll(BufferedWriter bwSaida, String msg) throws  IOException
-    {
-        BufferedWriter bwS;
 
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String hour = Integer.toString(timestamp.getHours());
-        String minutes = Integer.toString(timestamp.getMinutes());
+    // método que envia as mensagens aos clientes conectados
+    public void sendMessage(String msg, BufferedWriter bwSender, boolean firstMsg) throws  IOException {
 
-        for(BufferedWriter bw : clients){
-            bwS = (BufferedWriter)bw;
-            if(!(bwSaida == bwS)){
-                bw.write("[" + hour  + ":" + minutes + "] " + name + " disse: " + msg+"\r\n");
-                bw.flush();
+        BufferedWriter bufferedWriterReceiver;
+
+        String hour = Integer.toString(LocalDateTime.now().getHour());
+        String minutes = Integer.toString(LocalDateTime.now().getMinute());
+
+        if (hour.length() < 2){
+            hour = "0" + hour;
+        }
+
+        if (minutes.length() < 2){
+            minutes = "0" + minutes;
+        }
+
+        for(BufferedWriter bufferedWriter : clientsList){
+            bufferedWriterReceiver = bufferedWriter;
+            if(bwSender != bufferedWriterReceiver){ //manda msg pra todos que não são ele mesmo.
+                if (firstMsg){
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] " + msg+"\r\n");
+                    bufferedWriter.flush(); //limpa o stream
+                }
+                if (!msg.equals("saiu do chat ") && !firstMsg){
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] " + userName + " disse: " + msg+"\r\n");
+                    bufferedWriter.flush();
+                } else if (!firstMsg){
+                    bufferedWriter.write("[" + hour  + ":" + minutes + "] >>>> " + userName + " " + msg+"<<<<\r\n");
+                    bufferedWriter.flush();
+                }
             }
         }
     }
@@ -56,22 +74,25 @@ public class Server extends Thread {
         try{
 
             String msg;
-            OutputStream ou =  this.talk.getOutputStream();
-            Writer ouw = new OutputStreamWriter(ou);
-            BufferedWriter bfw = new BufferedWriter(ouw);
-            clients.add(bfw);
-            name = msg = bfr.readLine();
+            Writer outputStreamWriter = new OutputStreamWriter(this.talk.getOutputStream());
+            BufferedWriter bufferedWriter = new BufferedWriter(outputStreamWriter); // analogo ao reader em buffer
 
-            while(!"Sair".equalsIgnoreCase(msg) && msg != null)
+            msg = clientBufferedReader.readLine();
+            userName = msg;
+            sendMessage(">>>> " + userName + " entrou no chat <<<<", bufferedWriter, true);
+
+            clientsList.add(bufferedWriter);
+
+            while(!"quit".equals(msg) && msg != null)
             {
-                msg = bfr.readLine();
+                msg = clientBufferedReader.readLine();
                 if (msg == null){
-                    System.out.println("caiu null");
                     continue;
                 }
-                sendToAll(bfw, msg);
-                System.out.println(msg + "EU SOU  A MSG");
+                sendMessage(msg, bufferedWriter, false);
             }
+
+            clientsList.remove(bufferedWriter);
 
         }catch (Exception e) {
             e.printStackTrace();
@@ -79,30 +100,40 @@ public class Server extends Thread {
         }
     }
 
-    public static void main(String[] args){
-        try{
-            //Cria os objetos necessário para instânciar o servidor
-            JLabel lblMessage = new JLabel("Porta do Servidor:");
-            JTextField txtPorta = new JTextField("12345");
-            Object[] texts = {lblMessage, txtPorta };
-            JOptionPane.showMessageDialog(null, texts);
-            server = new ServerSocket(Integer.parseInt(txtPorta.getText()));
-            clients = new ArrayList<BufferedWriter>();
-            JOptionPane.showMessageDialog(null,"Servidor ativo na porta: "+
-                    txtPorta.getText());
-
-            while(true){
-                System.out.println("Aguardando conexão...");
-                Socket con = server.accept();
-                System.out.println("Cliente conectado...");
-                Thread t = new Server(con);
-                t.start();
+    public static void acceptConnections(ServerSocket server) throws IOException {
+        // loop de aceitar conexões c clientes - servidor fecha após 5 min sem conexoes
+        while(true){
+            try {
+                Socket talk = server.accept();
+                System.out.println("Conexão com o cliente estabelecida.");
+                Thread clientThread = new Server(talk); //criação do servidor
+                clientThread.start();
+            }catch (SocketTimeoutException ste){
+                System.out.println("Servidor encerrando - tempo limite de ociosidade atingido.");
+                break;
             }
+        }
+    }
+
+    public static void main(String[] args){
+        BufferedReader cli_reader = new BufferedReader(new InputStreamReader(System.in));
+
+        try{
+            System.out.println("Digite a porta (recomendada: 31415)");
+            String port_str = cli_reader.readLine();
+            int port = Integer.parseInt(port_str);
+            ServerSocket server = new ServerSocket(port);
+            server.setSoTimeout(86400*1000);// servidor fica 24h aguardando conexao antes de encerrar
+            System.out.println("Estabelecido limite de 24 horas de ociosidade.");
+            System.out.println("Servidor online na porta " + port_str + ".");
+
+            clientsList = new ArrayList<>();
+
+            acceptConnections(server);
 
         }catch (Exception e) {
-
             e.printStackTrace();
         }
-    }// Fim do método main
-
+        System.exit(0);
+    }
 }
