@@ -42,7 +42,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         JLabel welcomeMsg = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
         JLabel ipLabel = new JLabel("IP do Servidor");
-        ipField = new JTextField("127.0.0.1");
+        ipField = new JTextField("localhost");
         JLabel portLabel = new JLabel("Porta");
         portField = new JTextField("31415");
         JLabel userLabel = new JLabel("Seu nome");
@@ -78,9 +78,10 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         chatArea = new JTextArea(20,50);
         chatArea.setBackground(new Color(247, 239, 237));
         chatArea.setEditable(false);
-        msgField = new JTextField(44);
+        msgField = new JTextField(43);
+        msgField.setBackground(new Color(247, 239, 237));
         sendButton = new JButton("Enviar");
-        sendButton.setBackground(new Color(217, 191, 184));
+        sendButton.setBackground(new Color(149, 113, 240));
         sendButton.setForeground(new Color(255, 255, 255));
         JScrollPane scrollBar = new JScrollPane(chatArea);
         chatArea.setLineWrap(true);
@@ -109,7 +110,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
                     exit();
                 } catch (Exception exception) {
                     System.out.print("A funcao exit falhou. O servidor está online?\n");
-                    exception.printStackTrace();
                     setVisible(false);
                     dispose();
                 }
@@ -176,7 +176,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
             if(e.getActionCommand().equals(sendButton.getActionCommand()))
                 sendMessages(msgField.getText());
         } catch (IOException ioe) {
-            // TODO Auto-generated catch block
             ioe.printStackTrace();
         }
     }
@@ -187,7 +186,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
             try {
                 sendMessages(msgField.getText());
             } catch (IOException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
@@ -217,7 +215,6 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         try{
             clientApp.connect();
         } catch (ConnectException ce) {
-            ce.printStackTrace();
             System.out.println("Conexão falhou. O servidor está online?");
         }
         clientApp.listen();

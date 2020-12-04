@@ -109,7 +109,6 @@ public class Server extends Thread {
                 Thread clientThread = new Server(talk); //criação do servidor
                 clientThread.start();
             }catch (SocketTimeoutException ste){
-                ste.printStackTrace();
                 System.out.println("Servidor encerrando - tempo limite de ociosidade atingido.");
                 break;
             }
