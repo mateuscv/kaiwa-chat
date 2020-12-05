@@ -8,9 +8,7 @@ import java.io.Writer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -30,30 +28,12 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
     private final JTextArea chatArea;
 
-    private OutputStream outputStream;
-    private Writer writer;
+    private Writer outputWriter;
     private BufferedWriter bufferedWriter;
 
     private final JButton sendButton;
 
-
-    public JTextField handleLogin(){
-        // painel inicial de login
-
-        JLabel welcomeMsg = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
-        JLabel ipLabel = new JLabel("IP do Servidor");
-        ipField = new JTextField("localhost");
-        JLabel portLabel = new JLabel("Porta");
-        portField = new JTextField("31415");
-        JLabel userLabel = new JLabel("Seu nome");
-        userField = new JTextField();
-        Object[] texts = {welcomeMsg, userLabel, userField, ipLabel, ipField, portLabel, portField};
-        JOptionPane.showMessageDialog(null, texts);
-
-        return userField;
-    }
-
-    // criação das GUIs
+    // constructor
     public Client() throws IOException {
 
         // login GUI
@@ -76,12 +56,12 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         // elementos
         chatArea = new JTextArea(20,50);
-        chatArea.setBackground(new Color(247, 239, 237));
+        chatArea.setBackground(new Color(255, 255, 255));
         chatArea.setEditable(false);
         msgField = new JTextField(43);
         msgField.setBackground(new Color(247, 239, 237));
         sendButton = new JButton("Enviar");
-        sendButton.setBackground(new Color(149, 113, 240));
+        sendButton.setBackground(new Color(219, 36, 36));
         sendButton.setForeground(new Color(255, 255, 255));
         JScrollPane scrollBar = new JScrollPane(chatArea);
         chatArea.setLineWrap(true);
@@ -90,16 +70,16 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         chatJPanel.add(sendButton);
 
         // estética
-        chatJPanel.setBackground(new Color(245, 218, 196));
+        chatJPanel.setBackground(new Color(255, 237, 237));
 
         // listeners de ação
         sendButton.addActionListener(this);
         sendButton.addKeyListener(this);
         msgField.addKeyListener(this);
 
+        setResizable(false);
         setContentPane(chatJPanel);
         setLocationRelativeTo(null);
-        setResizable(false);
         setSize(630,420);
         setVisible(true);
 
@@ -118,33 +98,46 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
+
+
+    public JTextField handleLogin(){
+        // painel inicial de login
+
+        JLabel welcomeMsg = new JLabel("Bem-vindo(a) ao kaiWa Group Chat!");
+        JLabel ipLabel = new JLabel("IP do Servidor");
+        ipField = new JTextField("localhost");
+        JLabel portLabel = new JLabel("Porta");
+        portField = new JTextField("31415");
+        JLabel userLabel = new JLabel("Seu nome");
+        userField = new JTextField();
+        Object[] texts = {welcomeMsg, userLabel, userField, ipLabel, ipField, portLabel, portField};
+        JOptionPane.showMessageDialog(null, texts);
+
+        return userField;
+    }
+
     // conexão com o servidor
     public void connect() throws IOException{
         socket = new Socket(ipField.getText(),Integer.parseInt(portField.getText()));
-        outputStream = socket.getOutputStream();
-        writer = new OutputStreamWriter(outputStream);
-        bufferedWriter = new BufferedWriter(writer);
+        outputWriter = new OutputStreamWriter(socket.getOutputStream());
+        bufferedWriter = new BufferedWriter(outputWriter);
         bufferedWriter.write(userField.getText()+"\r\n");
         bufferedWriter.flush();
     }
 
-    // escuta
-    public void listen() throws IOException{
+    // escuta para ver se tem mensagem escrita
+    public void listen() throws IOException {
 
-        InputStream in = socket.getInputStream();
-        InputStreamReader inr = new InputStreamReader(in);
-        BufferedReader bfr = new BufferedReader(inr);
+        InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream());
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
         String msg = "";
 
-        while(!"quit".equals(msg))
-
-            if(bfr.ready()){
-                msg = bfr.readLine();
-                if(msg.equals("quit"))
-                    chatArea.append("Servidor caiu! \r\n");
-                else
-                    chatArea.append(msg+"\r\n");
+        while (!"quit".equals(msg)) {
+            if (bufferedReader.ready()) {
+                msg = bufferedReader.readLine();
+                chatArea.append(msg + "\r\n");
             }
+        }
     }
 
     // envio de mensagens
@@ -204,8 +197,7 @@ public class Client extends JFrame implements KeyListener, ActionListener { //KL
 
         sendMessages("quit");
         bufferedWriter.close();
-        writer.close();
-        outputStream.close();
+        outputWriter.close();
         socket.close();
     }
 
